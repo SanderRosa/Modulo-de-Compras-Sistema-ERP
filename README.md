@@ -1,86 +1,85 @@
 # 🏭 Módulo de Compras — Sistema ERP em C++
 
-> Módulo de compras completo para um sistema ERP (Enterprise Resource Planning), implementado em C++ com Programação Orientada a Objetos, interfaces abstratas e persistência em arquivo.
+> Módulo de compras completo para um sistema ERP (Enterprise Resource Planning), implementado em C++ com Programação Orientada a Objetos, interfaces abstratas, baixo acoplamento e persistência em arquivos.
 
 ---
 
-## 📋 Sobre o Projeto
+## 📋 Visão Geral do Projeto e Contexto de Engenharia
 
-O **Módulo de Compras ERP** é uma aplicação de console em C++ que simula o setor de compras de uma empresa industrial. Ele integra gerenciamento de fornecedores, ordens de compra, controle de estoque, pedidos de produção e módulo financeiro, tudo comunicando-se via interfaces abstratas para garantir baixo acoplamento e alta coesão.
+O **Módulo de Compras ERP** é uma aplicação industrial robusta em C++ puro que simula com alto grau de fidelidade a cadeia de suprimentos e o departamento de compras de uma empresa corporativa.
+
+O sistema integra:
+* Gerenciamento de fornecedores e ordens de compra.
+* Controle e verificação de itens em estoque.
+* Processamento de ordens de material provenientes da produção.
+* Módulo financeiro integrado para contas a pagar e liberação de saldo.
+* Sistema persistente de dados em arquivos de texto.
+
+Este projeto foca profundamente na aplicação de **boas práticas de engenharia de software**, demonstrando conceitos avançados de estruturação de código, modularidade e padrões de projeto essenciais para aplicações corporativas escaláveis.
 
 ---
 
-## 🌟 Funcionalidades
+## 🏗️ Padrões de Projeto e Práticas Arquiteturais
 
-| # | Funcionalidade | Módulo |
+### 1. Padrão de Projeto *Façade* (Fachada)
+A classe central `ModuloCompras` atua como uma interface unificada simplificada frente ao conjunto complexo de subsistemas internos. O cliente (ex: o menu principal em `main.cpp`) interage apenas com a fachada, ocultando a complexidade das interações entre estoque, financeiro, fornecedores e ordens de compra.
+
+### 2. Abstração e Interfaces de Baixo Acoplamento
+Para garantir que o módulo de compras possa se comunicar com outros departamentos sem dependências rígidas, utilizamos interfaces abstratas puras (`IEstoque`, `IFinanceiro`, `IProducao`). Isso permite o princípio da responsabilidade única e substituição imediata de implementações (como trocar mocks por integrações reais de banco de dados SQL futuros) sem reescrever a lógica de compras.
+
+* **Baixo Acoplamento:** As alterações feitas no comportamento interno do estoque ou financeiro não se propagam e não quebram o código do módulo de compras.
+
+### 3. Encapsulamento e Polimorfismo
+Uso estruturado de classes bases abstratas (`Pessoa`) com métodos virtuais puros, herança para `Fornecedor`, e tratamento estrito de exceções customizadas (`ComprasException`) para validações de regras de negócios.
+
+---
+
+## 🛠️ Tecnologias e Recursos de Linguagem
+
+| Recurso | Papel no Projeto | Justificativa Técnica |
 |---|---|---|
-| 1 | Cadastrar Fornecedor | Compras |
-| 2 | Listar Fornecedores | Compras |
-| 3 | Criar Ordem de Compra (com aprovação automática) | Compras |
-| 4 | Listar Ordens de Compra | Compras |
-| 5 | Exibir Estatísticas | Compras |
-| 6 | Investigar Fornecedor na Web (URL gerada) | Compras |
-| 7 | Consultar Item do Estoque | Estoque |
-| 8 | Listar Todos os Itens | Estoque |
-| 9 | Reservar Material | Estoque |
-| 10 | Criar Pedido de Material para Produção | Produção |
-| 11 | Listar Pedidos Pendentes | Produção |
-| 12 | Listar Contas a Pagar | Financeiro |
-| 13 | Consultar Saldo Disponível | Financeiro |
-| 14 | Salvar Dados em Arquivo | Sistema |
-| 15 | Carregar Dados do Arquivo | Sistema |
+| **C++ Puro** | Core do Sistema | Escolhido para demonstrar gerenciamento estrito de recursos físicos, uso adequado de ponteiros, referências e performance nativa. |
+| **Templates** | `ListaGenerica<T>` | Desenvolvimento de containers genéricos eficientes para coleções tipadas reutilizáveis. |
+| **CMake** | Sistema de Build | Toolchain de compilação unificado multiplataforma para orquestrar arquivos `.h` e `.cpp`. |
+| **Persistência** | `PersistenciaCompras` | Serialização e leitura estruturada de registros diretamente em arquivos de disco. |
 
 ---
 
-## 🏗️ Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
 ```
 Modulo de Compras Sistema ERP/
 ├── include/
-│   ├── ModuloCompras.h          # Fachada principal do sistema
+│   ├── ModuloCompras.h          # Fachada principal do sistema (Façade)
 │   ├── Fornecedor.h             # Entidade Fornecedor (herda Pessoa)
 │   ├── OrdemCompra.h            # Entidade Ordem de Compra
 │   ├── GerenciadorFornecedores.h
 │   ├── GerenciadorOrdens.h
-│   ├── PersistenciaCompras.h    # Interface de persistência
-│   ├── ListaGenerica.h          # Container genérico (template)
-│   ├── IEstoque.h               # Interface de Estoque
-│   ├── IFinanceiro.h            # Interface Financeira
-│   ├── IProducao.h              # Interface de Produção
-│   ├── IExibivel.h              # Interface de exibição
-│   ├── EstoqueMock.h            # Implementação simulada do Estoque
-│   ├── FinanceiroMock.h         # Implementação simulada do Financeiro
-│   ├── ProducaoMock.h           # Implementação simulada da Produção
+│   ├── PersistenciaCompras.h    # Interface de persistência em arquivos
+│   ├── ListaGenerica.h          # Container genérico customizado (template)
+│   ├── IEstoque.h               # Interface abstrata de Estoque
+│   ├── IFinanceiro.h            # Interface abstrata Financeira
+│   ├── IProducao.h              # Interface abstrata de Produção
+│   ├── IExibivel.h              # Interface de exibição genérica
+│   ├── EstoqueMock.h            # Implementação simulada (Mock) do Estoque
+│   ├── FinanceiroMock.h         # Implementação simulada (Mock) do Financeiro
+│   ├── ProducaoMock.h           # Implementação simulada (Mock) da Produção
 │   ├── Pessoa.h                 # Classe base abstrata
-│   └── ComprasException.h       # Exceções customizadas
+│   └── ComprasException.h       # Classe de exceções de negócio customizada
 │
 └── src/
-    ├── main.cpp                 # Interface de console e menu principal
-    ├── ModuloCompras.cpp        # Lógica de negócio principal
+    ├── main.cpp                 # Interface de linha de comando e menu
+    ├── ModuloCompras.cpp        # Lógica de negócio integrada da Fachada
     ├── GerenciadorFornecedores.cpp
     ├── GerenciadorOrdens.cpp
-    └── PersistenciaCompras.cpp  # Leitura/escrita em arquivo
+    └── PersistenciaCompras.cpp  # Implementação de leitura/escrita em arquivo
 ```
 
 ---
 
-## 🛠️ Tecnologias e Padrões
+## 🚀 Como Compilar e Executar
 
-| Conceito | Aplicação |
-|---|---|
-| **C++ (OOP)** | Classes, herança, polimorfismo |
-| **Interfaces Abstratas** | `IEstoque`, `IFinanceiro`, `IProducao` |
-| **Templates** | `ListaGenerica<T>` para coleções tipadas |
-| **Exceções** | `ComprasException` para erros de negócio |
-| **Padrão Façade** | `ModuloCompras` centraliza todos os subsistemas |
-| **CMake** | Sistema de build multiplataforma |
-| **Persistência** | Arquivo binário/texto via `PersistenciaCompras` |
-
----
-
-## 🚀 Como Compilar
-
-### Usando CMake
+### 1. Compilar usando CMake
 ```bash
 mkdir cmake-build-debug
 cd cmake-build-debug
@@ -88,24 +87,7 @@ cmake ..
 cmake --build .
 ```
 
-### Executar
+### 2. Executar a aplicação
 ```bash
 ./ModuloComprasERP
-```
-
----
-
-## 📌 Arquitetura
-
-O sistema segue o padrão **Façade**: a classe `ModuloCompras` centraliza o acesso a todos os subsistemas. Os módulos de Estoque, Financeiro e Produção são injetados via interfaces, permitindo substituição fácil das implementações mock por implementações reais.
-
-```
-main.cpp
-    └── ModuloCompras (Façade)
-            ├── GerenciadorFornecedores
-            ├── GerenciadorOrdens
-            ├── IEstoque (EstoqueMock)
-            ├── IFinanceiro (FinanceiroMock)
-            ├── IProducao (ProducaoMock)
-            └── PersistenciaCompras
 ```
