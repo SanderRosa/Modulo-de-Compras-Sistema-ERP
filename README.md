@@ -79,15 +79,22 @@ Modulo de Compras Sistema ERP/
 
 ## 🚀 Como Compilar e Executar
 
-### 1. Compilar usando CMake
-```bash
-mkdir cmake-build-debug
-cd cmake-build-debug
-cmake ..
-cmake --build .
+### 1. Compilação Rápida (Windows)
+Foi adicionado o script `compilar.bat` para facilitar a build com MinGW (`g++`):
+```bat
+./compilar.bat
 ```
+*Ele irá gerar automaticamente o executável em `build/Modulo_Compras_ERP.exe` e perguntar se deseja executá-lo.*
 
-### 2. Executar a aplicação
+### 2. Interface Web Premium (Nova Funcionalidade)
+O módulo agora possui uma **Interface Gráfica Web** desenvolvida em HTML/CSS/JS puro (`index.html`) que serve como um simulador interativo de todas as funcionalidades de ERP (Fornecedores, Estoque, Ordens, Produção e Financeiro).
+Para acessar, basta abrir o arquivo `index.html` no seu navegador de preferência.
+
+### 3. Compilação Clássica (CMake)
 ```bash
-./ModuloComprasERP
+mkdir build
+cd build
+cmake -G "MinGW Makefiles" ..
+cmake --build .
+./Modulo_Compras_ERP.exe
 ```
