@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Módulo de Compras ERP</title>
+  <meta name="description" content="Sistema ERP de Módulo de Compras — gestão de fornecedores, ordens de compra, estoque, produção e financeiro." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2333;
+      --border:    #30363d;
+      --accent:    #2563eb;
+      --accent2:   #3b82f6;
+      --accent-g:  linear-gradient(135deg, #2563eb, #7c3aed);
+      --green:     #22c55e;
+      --yellow:    #eab308;
+      --red:       #ef4444;
+      --orange:    #f97316;
+      --purple:    #a855f7;
+      --cyan:      #06b6d4;
+      --text:      #e6edf3;
+      --text2:     #8b949e;
+      --text3:     #6e7681;
+      --radius:    12px;
+      --radius-sm: 8px;
+      --shadow:    0 8px 32px rgba(0,0,0,.4);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,.3);
+      --trans:     all .2s ease;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* ═══════════════════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════════════════ */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: var(--trans);
+    }
+    .sidebar-logo {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--accent-g);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 16px rgba(37,99,235,.4);
+    }
+    .sidebar-logo h1 { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -.3px; }
+    .sidebar-logo p  { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    .nav { flex: 1; padding: 12px 8px; overflow-y: auto; }
+    .nav-group { margin-bottom: 20px; }
+    .nav-group-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text3);
+      padding: 0 12px; margin-bottom: 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: var(--radius-sm);
+      cursor: pointer; color: var(--text2);
+      font-size: 13px; font-weight: 500;
+      transition: var(--trans); position: relative;
+      border: 1px solid transparent;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active {
+      background: rgba(37,99,235,.15);
+      color: var(--accent2);
+      border-color: rgba(37,99,235,.3);
+    }
+    .nav-item.active::before {
+      content: '';
+      position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 20px;
+      background: var(--accent-g);
+      border-radius: 0 3px 3px 0;
+    }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: #fff; font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 20px;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .avatar {
+      width: 34px; height: 34px;
+      background: var(--accent-g);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .sidebar-footer .info { flex: 1; min-width: 0; }
+    .sidebar-footer .info .name { font-size: 12px; font-weight: 600; }
+    .sidebar-footer .info .role { font-size: 11px; color: var(--text2); }
+
+    /* ═══════════════════════════════════════════
+       MAIN CONTENT
+    ═══════════════════════════════════════════ */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 60px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 28px;
+      gap: 16px;
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(10px);
+    }
+    .topbar-title { font-size: 16px; font-weight: 700; flex: 1; }
+    .topbar-sub { font-size: 12px; color: var(--text2); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; transition: var(--trans);
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--accent-g); color: #fff;
+      box-shadow: 0 4px 12px rgba(37,99,235,.4);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,.5); }
+    .btn-ghost {
+      background: transparent; color: var(--text2);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+    .btn-danger {
+      background: rgba(239,68,68,.15); color: var(--red);
+      border: 1px solid rgba(239,68,68,.3);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,.25); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* Content area */
+    .content { padding: 28px; flex: 1; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ═══════════════════════════════════════════
+       CARDS / STATS
+    ═══════════════════════════════════════════ */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--trans);
+    }
+    .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .stat-card::after {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 80px; height: 80px;
+      background: var(--card-color, var(--accent));
+      opacity: .06;
+      border-radius: 50%;
+      transform: translate(20px, -20px);
+    }
+    .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text2); margin-bottom: 8px; }
+    .stat-value { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
+    .stat-sub { font-size: 12px; color: var(--text2); margin-top: 6px; }
+    .stat-icon {
+      position: absolute; top: 16px; right: 16px;
+      font-size: 24px; opacity: .5;
+    }
+    .stat-trend {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 6px; border-radius: 4px; margin-top: 6px;
+    }
+    .trend-up   { background: rgba(34,197,94,.15);  color: var(--green); }
+    .trend-down { background: rgba(239,68,68,.15);  color: var(--red); }
+
+    /* ═══════════════════════════════════════════
+       TABLES
+    ═══════════════════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .card-header h2 { font-size: 15px; font-weight: 700; flex: 1; }
+    .card-body { padding: 0; }
+    .card-footer { padding: 14px 24px; border-top: 1px solid var(--border); }
+
+    .search-bar {
+      position: relative; flex: 1; max-width: 300px;
+    }
+    .search-bar input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px; padding: 8px 12px 8px 36px;
+      outline: none; font-family: inherit;
+      transition: var(--trans);
+    }
+    .search-bar input:focus { border-color: var(--accent); }
+    .search-bar::before {
+      content: '🔍';
+      position: absolute; left: 10px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px; pointer-events: none;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 12px 20px;
+      background: var(--surface2);
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .8px;
+      color: var(--text2); text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: var(--trans);
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody td {
+      padding: 14px 20px;
+      font-size: 13px; color: var(--text);
+    }
+    .td-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge-green  { background: rgba(34,197,94,.15);  color: var(--green); }
+    .badge-yellow { background: rgba(234,179,8,.15);  color: var(--yellow); }
+    .badge-red    { background: rgba(239,68,68,.15);  color: var(--red); }
+    .badge-blue   { background: rgba(37,99,235,.15);  color: var(--accent2); }
+    .badge-purple { background: rgba(168,85,247,.15); color: var(--purple); }
+    .badge-cyan   { background: rgba(6,182,212,.15);  color: var(--cyan); }
+    .badge-gray   { background: rgba(110,118,129,.15);color: var(--text2); }
+
+    /* ═══════════════════════════════════════════
+       MODAL
+    ═══════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      animation: fadeIn .15s ease;
+    }
+    .modal-overlay.open { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 540px;
+      max-width: 95vw;
+      box-shadow: var(--shadow);
+      animation: slideUp .2s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; flex: 1; }
+    .modal-close {
+      background: none; border: none; color: var(--text2);
+      font-size: 20px; cursor: pointer; transition: var(--trans);
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: var(--surface2); color: var(--text); }
+    .modal-body { padding: 24px; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--text2); }
+    .form-group input, .form-group select, .form-group textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 13px; padding: 10px 12px;
+      outline: none; font-family: inherit;
+      transition: var(--trans);
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+    .form-group select { cursor: pointer; }
+    .form-group select option { background: var(--surface2); }
+
+    /* ═══════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════ */
+    #toasts {
+      position: fixed; bottom: 24px; right: 24px;
+      z-index: 300; display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: var(--shadow);
+      animation: slideInRight .2s ease;
+      min-width: 260px;
+    }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error   { border-left: 3px solid var(--red); }
+    .toast.info    { border-left: 3px solid var(--accent); }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ═══════════════════════════════════════════
+       DASHBOARD
+    ═══════════════════════════════════════════ */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; }
+    .bar-label { font-size: 11px; color: var(--text2); width: 80px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 4px; transition: width .6s ease; }
+    .bar-value { font-size: 11px; color: var(--text2); width: 40px; text-align: right; flex-shrink: 0; }
+
+    .activity-list { display: flex; flex-direction: column; gap: 0; }
+    .activity-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .activity-text { font-size: 12px; flex: 1; }
+    .activity-time { font-size: 11px; color: var(--text3); }
+
+    /* ═══════════════════════════════════════════
+       ESTOQUE — barras de nível
+    ═══════════════════════════════════════════ */
+    .stock-level { display: flex; align-items: center; gap: 8px; }
+    .stock-bar { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; max-width: 100px; }
+    .stock-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
+    .stock-fill.high   { background: var(--green); }
+    .stock-fill.medium { background: var(--yellow); }
+    .stock-fill.low    { background: var(--red); }
+
+    /* ═══════════════════════════════════════════
+       FINANCEIRO
+    ═══════════════════════════════════════════ */
+    .fin-summary {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin-bottom: 20px;
+    }
+    .fin-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px; text-align: center;
+    }
+    .fin-card .amount {
+      font-size: 26px; font-weight: 800; margin: 8px 0;
+    }
+    .fin-card .fin-label { font-size: 12px; color: var(--text2); }
+
+    /* ═══════════════════════════════════════════
+       EMPTY STATE
+    ═══════════════════════════════════════════ */
+    .empty {
+      text-align: center; padding: 60px 20px;
+      color: var(--text2);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: .5; }
+    .empty h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .empty p { font-size: 13px; }
+
+    /* ═══════════════════════════════════════════
+       SCROLLBAR
+    ═══════════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🏭</div>
+    <h1>Módulo de Compras</h1>
+    <p>Sistema ERP</p>
+  </div>
+
+  <div class="nav">
+    <div class="nav-group">
+      <div class="nav-group-label">Principal</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Compras</div>
+      <div class="nav-item" id="nav-fornecedores" onclick="showPage('fornecedores')">
+        <span class="nav-icon">🏢</span> Fornecedores
+        <span class="nav-badge" id="badge-forn">0</span>
+      </div>
+      <div class="nav-item" id="nav-ordens" onclick="showPage('ordens')">
+        <span class="nav-icon">📋</span> Ordens de Compra
+        <span class="nav-badge" id="badge-ordens">0</span>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Operacional</div>
+      <div class="nav-item" id="nav-estoque" onclick="showPage('estoque')">
+        <span class="nav-icon">📦</span> Estoque
+      </div>
+      <div class="nav-item" id="nav-producao" onclick="showPage('producao')">
+        <span class="nav-icon">⚙️</span> Produção
+        <span class="nav-badge" id="badge-prod">0</span>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Gestão</div>
+      <div class="nav-item" id="nav-financeiro" onclick="showPage('financeiro')">
+        <span class="nav-icon">💰</span> Financeiro
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="avatar">G</div>
+    <div class="info">
+      <div class="name">Gestor ERP</div>
+      <div class="role">Administrador</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div style="flex:1">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-sub" id="page-sub">Visão geral do sistema</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="exportData()">⬇️ Exportar</button>
+    <button class="btn btn-primary btn-sm" id="topbar-action" onclick="openAddModal()">+ Novo</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ══════════════════ DASHBOARD ══════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid" id="dash-stats"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">📈 Top Fornecedores por Valor</div>
+          <div class="bar-chart" id="chart-fornecedores"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">🕐 Atividade Recente</div>
+          <div class="activity-list" id="activity-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ FORNECEDORES ══════════════════ -->
+    <div class="page" id="page-fornecedores">
+      <div class="card">
+        <div class="card-header">
+          <h2>🏢 Fornecedores</h2>
+          <div class="search-bar">
+            <input type="text" id="search-forn" placeholder="Buscar fornecedor..." oninput="renderFornecedores()" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-fornecedor')">+ Cadastrar</button>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Nome / CNPJ</th><th>Produto</th>
+                <th>Preço Unit.</th><th>Endereço</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tb-fornecedores"></tbody>
+          </table>
+          <div id="empty-forn" class="empty" style="display:none">
+            <div class="empty-icon">🏢</div>
+            <h3>Nenhum fornecedor cadastrado</h3>
+            <p>Clique em "+ Cadastrar" para adicionar o primeiro.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ ORDENS ══════════════════ -->
+    <div class="page" id="page-ordens">
+      <div class="card">
+        <div class="card-header">
+          <h2>📋 Ordens de Compra</h2>
+          <div class="search-bar">
+            <input type="text" id="search-ordem" placeholder="Buscar ordem..." oninput="renderOrdens()" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-ordem')">+ Nova Ordem</button>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Item / Material</th><th>Fornecedor</th>
+                <th>Qtd</th><th>Valor Total</th><th>Status</th>
+                <th>Data</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tb-ordens"></tbody>
+          </table>
+          <div id="empty-ordens" class="empty" style="display:none">
+            <div class="empty-icon">📋</div>
+            <h3>Nenhuma ordem de compra</h3>
+            <p>Clique em "+ Nova Ordem" para criar.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ ESTOQUE ══════════════════ -->
+    <div class="page" id="page-estoque">
+      <div class="card">
+        <div class="card-header">
+          <h2>📦 Estoque</h2>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-estoque')">+ Adicionar Item</button>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Material</th><th>Nível</th>
+                <th>Quantidade</th><th>Última Ordem</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tb-estoque"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ PRODUÇÃO ══════════════════ -->
+    <div class="page" id="page-producao">
+      <div class="card">
+        <div class="card-header">
+          <h2>⚙️ Pedidos de Produção</h2>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-producao')">+ Novo Pedido</button>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Material</th><th>Quantidade</th>
+                <th>Prioridade</th><th>Status</th><th>Data</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tb-producao"></tbody>
+          </table>
+          <div id="empty-prod" class="empty" style="display:none">
+            <div class="empty-icon">⚙️</div>
+            <h3>Nenhum pedido de produção</h3>
+            <p>Clique em "+ Novo Pedido" para solicitar material.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ FINANCEIRO ══════════════════ -->
+    <div class="page" id="page-financeiro">
+      <div class="fin-summary" id="fin-summary"></div>
+      <div class="card">
+        <div class="card-header">
+          <h2>💳 Contas a Pagar</h2>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Ordem</th><th>Fornecedor</th><th>Material</th>
+                <th>Valor</th><th>Vencimento</th><th>Status</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tb-financeiro"></tbody>
+          </table>
+          <div id="empty-fin" class="empty" style="display:none">
+            <div class="empty-icon">💰</div>
+            <h3>Nenhuma conta a pagar</h3>
+            <p>As ordens aprovadas aparecem aqui.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════
+     MODAIS
+══════════════════════════════════════ -->
+
+<!-- Modal Fornecedor -->
+<div class="modal-overlay" id="modal-fornecedor">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-forn-title">🏢 Cadastrar Fornecedor</h3>
+      <button class="modal-close" onclick="closeModal('modal-fornecedor')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Nome do Fornecedor *</label>
+          <input type="text" id="forn-nome" placeholder="Ex: Aço Industrial Ltda" />
+        </div>
+        <div class="form-group">
+          <label>CNPJ *</label>
+          <input type="text" id="forn-cnpj" placeholder="00.000.000/0001-00" maxlength="18" />
+        </div>
+        <div class="form-group">
+          <label>Produto Fornecido *</label>
+          <input type="text" id="forn-produto" placeholder="Ex: Aço Inox" />
+        </div>
+        <div class="form-group full">
+          <label>Endereço</label>
+          <input type="text" id="forn-endereco" placeholder="Rua, Número — Cidade/UF" />
+        </div>
+        <div class="form-group">
+          <label>Preço Unitário (R$)</label>
+          <input type="number" id="forn-preco" placeholder="0.00" step="0.01" min="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-fornecedor')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveFornecedor()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ordem de Compra -->
+<div class="modal-overlay" id="modal-ordem">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📋 Nova Ordem de Compra</h3>
+      <button class="modal-close" onclick="closeModal('modal-ordem')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Fornecedor *</label>
+          <select id="ordem-forn">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ID do Material *</label>
+          <select id="ordem-item">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantidade *</label>
+          <input type="number" id="ordem-qtd" placeholder="1" min="1" />
+        </div>
+        <div class="form-group">
+          <label>Valor Unitário (R$)</label>
+          <input type="number" id="ordem-valor" placeholder="0.00" step="0.01" min="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ordem')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveOrdem()">✅ Criar Ordem</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Estoque -->
+<div class="modal-overlay" id="modal-estoque">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📦 Adicionar Item ao Estoque</h3>
+      <button class="modal-close" onclick="closeModal('modal-estoque')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Nome do Material *</label>
+          <input type="text" id="est-nome" placeholder="Ex: Parafusos M10" />
+        </div>
+        <div class="form-group">
+          <label>Quantidade Inicial</label>
+          <input type="number" id="est-qtd" placeholder="0" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Nível Mínimo (alerta)</label>
+          <input type="number" id="est-min" placeholder="20" min="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-estoque')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEstoque()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Produção -->
+<div class="modal-overlay" id="modal-producao">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚙️ Pedido de Material para Produção</h3>
+      <button class="modal-close" onclick="closeModal('modal-producao')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Material *</label>
+          <select id="prod-item">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantidade *</label>
+          <input type="number" id="prod-qtd" placeholder="1" min="1" />
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select id="prod-prio">
+            <option value="1">🟢 Baixa</option>
+            <option value="2" selected>🟡 Média</option>
+            <option value="3">🔴 Alta</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-producao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProducao()">📤 Solicitar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toasts"></div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/* ──────────────── STATE ──────────────── */
+const DB_KEY = 'erp_compras_v1';
+let db = JSON.parse(localStorage.getItem(DB_KEY) || 'null') || {
+  fornecedores: [
+    { id: 1, nome: 'Metais & Cia Ltda',        cnpj: '12.345.678/0001-90', produto: 'Aço Inox',           preco: 45.50,  endereco: 'Av. Industrial, 100 — SP' },
+    { id: 2, nome: 'Fixadores Brasil S.A.',     cnpj: '98.765.432/0001-11', produto: 'Parafusos M10',      preco: 0.85,   endereco: 'Rua das Peças, 22 — MG'   },
+    { id: 3, nome: 'Elastômeros do Sul Ltda',   cnpj: '11.222.333/0001-44', produto: 'Borracha Industrial', preco: 12.30, endereco: 'Rod. BR-116, km 45 — RS'   },
+  ],
+  ordens: [],
+  estoque: [
+    { id: 1, nome: 'Aço Inox',            quantidade: 100, minimo: 20, ultimaOrdem: 0 },
+    { id: 2, nome: 'Parafusos M10',       quantidade: 500, minimo: 100, ultimaOrdem: 0 },
+    { id: 3, nome: 'Borracha Industrial', quantidade: 50,  minimo: 15, ultimaOrdem: 0 },
+  ],
+  producao: [],
+  financeiro: { saldo: 50000, contasPagar: [] },
+  nextIds: { forn: 4, ordem: 1, est: 4, prod: 1 },
+  atividade: [
+    { texto: 'Sistema ERP inicializado', cor: '#22c55e', hora: now() },
+    { texto: '3 fornecedores carregados', cor: '#3b82f6', hora: now() },
+    { texto: '3 itens de estoque inicializados', cor: '#a855f7', hora: now() },
+  ]
+};
+
+function save() { localStorage.setItem(DB_KEY, JSON.stringify(db)); updateBadges(); }
+function now()  { return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+function fmt(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 }); }
+function addActivity(texto, cor = '#3b82f6') {
+  db.atividade.unshift({ texto, cor, hora: now() });
+  if (db.atividade.length > 10) db.atividade.pop();
+}
+
+/* ──────────────── NAV ──────────────── */
+const pageConfig = {
+  dashboard:    { title: 'Dashboard',          sub: 'Visão geral do sistema',      action: false },
+  fornecedores: { title: 'Fornecedores',       sub: 'Gerencie seus fornecedores',  action: true  },
+  ordens:       { title: 'Ordens de Compra',   sub: 'Controle de aquisições',      action: true  },
+  estoque:      { title: 'Estoque',            sub: 'Inventário de materiais',     action: true  },
+  producao:     { title: 'Produção',           sub: 'Pedidos de material',         action: true  },
+  financeiro:   { title: 'Financeiro',         sub: 'Saldo e contas a pagar',      action: false },
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  const cfg = pageConfig[id];
+  document.getElementById('page-title').textContent = cfg.title;
+  document.getElementById('page-sub').textContent = cfg.sub;
+  document.getElementById('topbar-action').style.display = cfg.action ? '' : 'none';
+  const renders = { dashboard: renderDashboard, fornecedores: renderFornecedores, ordens: renderOrdens, estoque: renderEstoque, producao: renderProducao, financeiro: renderFinanceiro };
+  renders[id]?.();
+}
+
+function openAddModal() {
+  const active = document.querySelector('.nav-item.active')?.id.replace('nav-', '');
+  const map = { fornecedores: 'modal-fornecedor', ordens: 'modal-ordem', estoque: 'modal-estoque', producao: 'modal-producao' };
+  if (map[active]) openModal(map[active]);
+}
+
+/* ──────────────── BADGES ──────────────── */
+function updateBadges() {
+  document.getElementById('badge-forn').textContent   = db.fornecedores.length;
+  document.getElementById('badge-ordens').textContent = db.ordens.length;
+  document.getElementById('badge-prod').textContent   = db.producao.filter(p => p.status === 'PENDENTE').length;
+}
+
+/* ──────────────── MODAL ──────────────── */
+function openModal(id) {
+  if (id === 'modal-ordem') populateOrdemSelects();
+  if (id === 'modal-producao') populateProdSelects();
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.getElementById(id).querySelectorAll('input, select').forEach(el => el.value = '');
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+/* ──────────────── TOAST ──────────────── */
+function toast(msg, type = 'success') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/* ──────────────── DASHBOARD ──────────────── */
+function renderDashboard() {
+  const totalOrdens = db.ordens.length;
+  const totalValor  = db.ordens.reduce((s, o) => s + o.quantidade * o.valorUnit, 0);
+  const pendentes   = db.ordens.filter(o => o.status === 'PENDENTE').length;
+  const aprovados   = db.ordens.filter(o => o.status === 'APROVADO').length;
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card" style="--card-color:#3b82f6">
+      <div class="stat-label">Fornecedores</div>
+      <div class="stat-value">${db.fornecedores.length}</div>
+      <div class="stat-sub">cadastrados no sistema</div>
+      <div class="stat-icon">🏢</div>
+    </div>
+    <div class="stat-card" style="--card-color:#22c55e">
+      <div class="stat-label">Ordens de Compra</div>
+      <div class="stat-value">${totalOrdens}</div>
+      <div class="stat-sub">${aprovados} aprovadas · ${pendentes} pendentes</div>
+      <div class="stat-icon">📋</div>
+    </div>
+    <div class="stat-card" style="--card-color:#eab308">
+      <div class="stat-label">Volume Total</div>
+      <div class="stat-value" style="font-size:20px">${fmt(totalValor)}</div>
+      <div class="stat-sub">em ordens de compra</div>
+      <div class="stat-icon">💰</div>
+    </div>
+    <div class="stat-card" style="--card-color:#a855f7">
+      <div class="stat-label">Saldo Disponível</div>
+      <div class="stat-value" style="font-size:20px">${fmt(db.financeiro.saldo)}</div>
+      <div class="stat-sub">para novas compras</div>
+      <div class="stat-icon">🏦</div>
+    </div>
+    <div class="stat-card" style="--card-color:#06b6d4">
+      <div class="stat-label">Itens em Estoque</div>
+      <div class="stat-value">${db.estoque.length}</div>
+      <div class="stat-sub">${db.estoque.filter(e=>e.quantidade<=e.minimo).length} em nível baixo</div>
+      <div class="stat-icon">📦</div>
+    </div>
+    <div class="stat-card" style="--card-color:#f97316">
+      <div class="stat-label">Pedidos Produção</div>
+      <div class="stat-value">${db.producao.length}</div>
+      <div class="stat-sub">${db.producao.filter(p=>p.status==='PENDENTE').length} pendentes</div>
+      <div class="stat-icon">⚙️</div>
+    </div>
+  `;
+
+  // Chart fornecedores
+  const maxPreco = Math.max(...db.fornecedores.map(f => f.preco), 1);
+  const colors = ['#3b82f6','#22c55e','#a855f7','#f97316','#06b6d4','#eab308'];
+  document.getElementById('chart-fornecedores').innerHTML = db.fornecedores.length
+    ? db.fornecedores.slice(0,6).map((f,i) => `
+        <div class="bar-row">
+          <div class="bar-label" title="${f.nome}">${f.nome.split(' ')[0]}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${Math.round(f.preco/maxPreco*100)}%;background:${colors[i%colors.length]}"></div>
+          </div>
+          <div class="bar-value">${fmt(f.preco)}</div>
+        </div>`).join('')
+    : '<div style="color:var(--text2);font-size:13px;text-align:center;padding:20px">Sem fornecedores</div>';
+
+  // Atividade
+  document.getElementById('activity-list').innerHTML = db.atividade.slice(0,7).map(a => `
+    <div class="activity-item">
+      <div class="activity-dot" style="background:${a.cor}"></div>
+      <div class="activity-text">${a.texto}</div>
+      <div class="activity-time">${a.hora}</div>
+    </div>`).join('');
+}
+
+/* ──────────────── FORNECEDORES ──────────────── */
+let editFornId = null;
+function renderFornecedores() {
+  const q = (document.getElementById('search-forn')?.value || '').toLowerCase();
+  const list = db.fornecedores.filter(f =>
+    f.nome.toLowerCase().includes(q) ||
+    f.cnpj.includes(q) ||
+    f.produto.toLowerCase().includes(q)
+  );
+  const tb = document.getElementById('tb-fornecedores');
+  const empty = document.getElementById('empty-forn');
+  if (!list.length) { tb.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tb.innerHTML = list.map(f => `
+    <tr>
+      <td><span class="badge badge-gray">#${f.id}</span></td>
+      <td>
+        <div style="font-weight:600">${f.nome}</div>
+        <div class="td-sub">${f.cnpj}</div>
+      </td>
+      <td>${f.produto || '—'}</td>
+      <td style="font-weight:600;color:var(--green)">${fmt(f.preco)}</td>
+      <td style="color:var(--text2);font-size:12px">${f.endereco || '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="editFornecedor(${f.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFornecedor(${f.id})">🗑️</button>
+          <a href="https://www.google.com/search?q=${encodeURIComponent(f.nome+' '+f.cnpj)}" target="_blank" class="btn btn-ghost btn-sm" title="Pesquisar na web">🌐</a>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function saveFornecedor() {
+  const nome     = document.getElementById('forn-nome').value.trim();
+  const cnpj     = document.getElementById('forn-cnpj').value.trim();
+  const produto  = document.getElementById('forn-produto').value.trim();
+  const endereco = document.getElementById('forn-endereco').value.trim();
+  const preco    = parseFloat(document.getElementById('forn-preco').value) || 0;
+  if (!nome || !cnpj || !produto) { toast('Preencha os campos obrigatórios!', 'error'); return; }
+
+  if (editFornId) {
+    const idx = db.fornecedores.findIndex(f => f.id === editFornId);
+    if (idx >= 0) { db.fornecedores[idx] = { ...db.fornecedores[idx], nome, cnpj, produto, endereco, preco }; }
+    addActivity(`Fornecedor #${editFornId} atualizado`, '#eab308');
+    toast('Fornecedor atualizado!');
+    editFornId = null;
+    document.getElementById('modal-forn-title').textContent = '🏢 Cadastrar Fornecedor';
+  } else {
+    const id = db.nextIds.forn++;
+    db.fornecedores.push({ id, nome, cnpj, produto, endereco, preco });
+    addActivity(`Fornecedor #${id} cadastrado: ${nome}`, '#22c55e');
+    toast(`Fornecedor #${id} cadastrado!`);
+  }
+  save(); closeModal('modal-fornecedor'); renderFornecedores();
+}
+
+function editFornecedor(id) {
+  const f = db.fornecedores.find(x => x.id === id);
+  if (!f) return;
+  editFornId = id;
+  document.getElementById('forn-nome').value     = f.nome;
+  document.getElementById('forn-cnpj').value     = f.cnpj;
+  document.getElementById('forn-produto').value  = f.produto;
+  document.getElementById('forn-endereco').value = f.endereco;
+  document.getElementById('forn-preco').value    = f.preco;
+  document.getElementById('modal-forn-title').textContent = '✏️ Editar Fornecedor';
+  openModal('modal-fornecedor');
+}
+
+function deleteFornecedor(id) {
+  if (!confirm('Excluir este fornecedor?')) return;
+  db.fornecedores = db.fornecedores.filter(f => f.id !== id);
+  addActivity(`Fornecedor #${id} removido`, '#ef4444');
+  save(); toast('Fornecedor removido.', 'info'); renderFornecedores();
+}
+
+/* ──────────────── ORDENS ──────────────── */
+const statusBadge = {
+  PENDENTE:  'badge-yellow',
+  APROVADO:  'badge-green',
+  REJEITADO: 'badge-red',
+  ENVIADO:   'badge-blue',
+  ENTREGUE:  'badge-purple',
+};
+
+function populateOrdemSelects() {
+  const sf = document.getElementById('ordem-forn');
+  sf.innerHTML = '<option value="">Selecione o fornecedor...</option>' +
+    db.fornecedores.map(f => `<option value="${f.id}">${f.nome} (${f.produto})</option>`).join('');
+  const si = document.getElementById('ordem-item');
+  si.innerHTML = '<option value="">Selecione o material...</option>' +
+    db.estoque.map(e => `<option value="${e.id}">${e.nome} (Estoque: ${e.quantidade})</option>`).join('');
+  si.addEventListener('change', () => {
+    const est = db.estoque.find(e => e.id == si.value);
+    const forn = db.fornecedores.find(f => f.id == sf.value);
+    if (!forn) return;
+    document.getElementById('ordem-valor').value = forn.preco;
+  });
+  sf.addEventListener('change', () => {
+    const forn = db.fornecedores.find(f => f.id == sf.value);
+    if (forn) document.getElementById('ordem-valor').value = forn.preco;
+  });
+}
+
+function renderOrdens() {
+  const q = (document.getElementById('search-ordem')?.value || '').toLowerCase();
+  const list = db.ordens.filter(o => {
+    const f = db.fornecedores.find(x => x.id === o.idFornecedor);
+    return String(o.id).includes(q) || (f?.nome||'').toLowerCase().includes(q) ||
+           o.status.toLowerCase().includes(q);
+  });
+  const tb = document.getElementById('tb-ordens');
+  const empty = document.getElementById('empty-ordens');
+  if (!list.length) { tb.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tb.innerHTML = list.map(o => {
+    const f = db.fornecedores.find(x => x.id === o.idFornecedor);
+    const est = db.estoque.find(e => e.id === o.idItem);
+    const total = o.quantidade * o.valorUnit;
+    return `
+    <tr>
+      <td><span class="badge badge-gray">#${o.id}</span></td>
+      <td>
+        <div style="font-weight:600">${est?.nome || 'Item #'+o.idItem}</div>
+        <div class="td-sub">Qtd: ${o.quantidade} × ${fmt(o.valorUnit)}</div>
+      </td>
+      <td>${f?.nome || '—'}</td>
+      <td style="font-weight:600">${o.quantidade}</td>
+      <td style="font-weight:700;color:var(--green)">${fmt(total)}</td>
+      <td><span class="badge ${statusBadge[o.status]||'badge-gray'}">${o.status}</span></td>
+      <td style="color:var(--text2);font-size:12px">${o.data}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${o.status === 'PENDENTE' ? `<button class="btn btn-ghost btn-sm" onclick="avancarOrdem(${o.id})" title="Aprovar">✅</button>` : ''}
+          ${o.status === 'APROVADO' ? `<button class="btn btn-ghost btn-sm" onclick="avancarOrdem(${o.id})" title="Enviar">📤</button>` : ''}
+          ${o.status === 'ENVIADO'  ? `<button class="btn btn-ghost btn-sm" onclick="avancarOrdem(${o.id})" title="Marcar entregue">📦</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteOrdem(${o.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>`}).join('');
+}
+
+function saveOrdem() {
+  const idForn  = parseInt(document.getElementById('ordem-forn').value);
+  const idItem  = parseInt(document.getElementById('ordem-item').value);
+  const qtd     = parseInt(document.getElementById('ordem-qtd').value);
+  const valorU  = parseFloat(document.getElementById('ordem-valor').value) || 0;
+  if (!idForn || !idItem || !qtd) { toast('Preencha todos os campos!', 'error'); return; }
+  const total = qtd * valorU;
+  let status = 'APROVADO';
+  if (total > db.financeiro.saldo) { status = 'REJEITADO'; toast('⚠️ Saldo insuficiente — ordem rejeitada.', 'error'); }
+  else { db.financeiro.saldo -= total; }
+
+  const id = db.nextIds.ordem++;
+  const data = new Date().toLocaleDateString('pt-BR');
+  const ordem = { id, idFornecedor: idForn, idItem, quantidade: qtd, valorUnit: valorU, status, data };
+  db.ordens.push(ordem);
+  if (status === 'APROVADO') {
+    db.financeiro.contasPagar.push({ ordemId: id, idFornecedor: idForn, idItem, valor: total, vencimento: venc30(), pago: false });
+    const est = db.estoque.find(e => e.id === idItem);
+    if (est) { est.quantidade += qtd; est.ultimaOrdem = id; }
+    addActivity(`Ordem #${id} aprovada — ${fmt(total)}`, '#22c55e');
+    toast(`Ordem #${id} criada e aprovada!`);
+  } else {
+    addActivity(`Ordem #${id} rejeitada — saldo insuficiente`, '#ef4444');
+  }
+  save(); closeModal('modal-ordem'); renderOrdens();
+}
+
+function avancarOrdem(id) {
+  const o = db.ordens.find(x => x.id === id);
+  if (!o) return;
+  const next = { PENDENTE: 'APROVADO', APROVADO: 'ENVIADO', ENVIADO: 'ENTREGUE' };
+  const cores = { APROVADO: '#22c55e', ENVIADO: '#3b82f6', ENTREGUE: '#a855f7' };
+  if (next[o.status]) {
+    o.status = next[o.status];
+    addActivity(`Ordem #${id} → ${o.status}`, cores[o.status]);
+    save(); toast(`Ordem #${id} agora: ${o.status}`); renderOrdens();
+  }
+}
+
+function deleteOrdem(id) {
+  if (!confirm('Excluir esta ordem?')) return;
+  db.ordens = db.ordens.filter(o => o.id !== id);
+  db.financeiro.contasPagar = db.financeiro.contasPagar.filter(c => c.ordemId !== id);
+  addActivity(`Ordem #${id} removida`, '#ef4444');
+  save(); toast('Ordem removida.', 'info'); renderOrdens();
+}
+
+function venc30() {
+  const d = new Date(); d.setDate(d.getDate() + 30);
+  return d.toLocaleDateString('pt-BR');
+}
+
+/* ──────────────── ESTOQUE ──────────────── */
+function renderEstoque() {
+  document.getElementById('tb-estoque').innerHTML = db.estoque.map(e => {
+    const pct = Math.min(100, Math.round(e.quantidade / Math.max(e.minimo * 3, 1) * 100));
+    const cls = e.quantidade <= e.minimo ? 'low' : e.quantidade <= e.minimo * 2 ? 'medium' : 'high';
+    const badge = cls === 'low' ? 'badge-red' : cls === 'medium' ? 'badge-yellow' : 'badge-green';
+    const label = cls === 'low' ? '⚠️ Baixo' : cls === 'medium' ? 'Médio' : '✅ OK';
+    return `
+    <tr>
+      <td><span class="badge badge-gray">#${e.id}</span></td>
+      <td style="font-weight:600">${e.nome}</td>
+      <td>
+        <div class="stock-level">
+          <div class="stock-bar"><div class="stock-fill ${cls}" style="width:${pct}%"></div></div>
+          <span class="badge ${badge}" style="font-size:10px">${label}</span>
+        </div>
+      </td>
+      <td style="font-weight:700">${e.quantidade} un.</td>
+      <td>${e.ultimaOrdem ? '#'+e.ultimaOrdem : '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="ajustarEstoque(${e.id})">📥 Ajustar</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEstoque(${e.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function saveEstoque() {
+  const nome = document.getElementById('est-nome').value.trim();
+  const qtd  = parseInt(document.getElementById('est-qtd').value) || 0;
+  const min  = parseInt(document.getElementById('est-min').value) || 20;
+  if (!nome) { toast('Informe o nome do material!', 'error'); return; }
+  const id = db.nextIds.est++;
+  db.estoque.push({ id, nome, quantidade: qtd, minimo: min, ultimaOrdem: 0 });
+  addActivity(`Material #${id} adicionado ao estoque: ${nome}`, '#06b6d4');
+  save(); toast(`"${nome}" adicionado ao estoque!`); closeModal('modal-estoque'); renderEstoque();
+}
+
+function ajustarEstoque(id) {
+  const e = db.estoque.find(x => x.id === id);
+  if (!e) return;
+  const v = prompt(`Ajustar quantidade de "${e.nome}" (atual: ${e.quantidade}).\nDigite o novo valor:`);
+  if (v === null || v === '') return;
+  const n = parseInt(v);
+  if (isNaN(n) || n < 0) { toast('Valor inválido!', 'error'); return; }
+  e.quantidade = n;
+  addActivity(`Estoque de "${e.nome}" ajustado para ${n}`, '#06b6d4');
+  save(); toast('Estoque atualizado!'); renderEstoque();
+}
+
+function deleteEstoque(id) {
+  if (!confirm('Remover este item do estoque?')) return;
+  db.estoque = db.estoque.filter(e => e.id !== id);
+  save(); toast('Item removido.', 'info'); renderEstoque();
+}
+
+/* ──────────────── PRODUÇÃO ──────────────── */
+function populateProdSelects() {
+  document.getElementById('prod-item').innerHTML =
+    '<option value="">Selecione o material...</option>' +
+    db.estoque.map(e => `<option value="${e.id}">${e.nome} (Estoque: ${e.quantidade})</option>`).join('');
+}
+
+function renderProducao() {
+  const list = db.producao;
+  const tb = document.getElementById('tb-producao');
+  const empty = document.getElementById('empty-prod');
+  if (!list.length) { tb.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  const prioLabel = ['','🟢 Baixa','🟡 Média','🔴 Alta'];
+  const prioBadge = ['','badge-green','badge-yellow','badge-red'];
+  tb.innerHTML = list.map(p => {
+    const est = db.estoque.find(e => e.id === p.idItem);
+    return `
+    <tr>
+      <td><span class="badge badge-gray">#${p.id}</span></td>
+      <td style="font-weight:600">${est?.nome || 'Material #'+p.idItem}</td>
+      <td>${p.quantidade} un.</td>
+      <td><span class="badge ${prioBadge[p.prioridade]}">${prioLabel[p.prioridade]}</span></td>
+      <td><span class="badge ${p.status === 'PENDENTE' ? 'badge-yellow' : 'badge-green'}">${p.status}</span></td>
+      <td style="color:var(--text2);font-size:12px">${p.data}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          ${p.status === 'PENDENTE' ? `<button class="btn btn-ghost btn-sm" onclick="concluirProducao(${p.id})">✅ Concluir</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteProd(${p.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>`}).join('');
+}
+
+function saveProducao() {
+  const idItem = parseInt(document.getElementById('prod-item').value);
+  const qtd    = parseInt(document.getElementById('prod-qtd').value);
+  const prio   = parseInt(document.getElementById('prod-prio').value);
+  if (!idItem || !qtd) { toast('Preencha todos os campos!', 'error'); return; }
+  const est = db.estoque.find(e => e.id === idItem);
+  if (est && est.quantidade < qtd) { toast(`⚠️ Estoque insuficiente (${est.quantidade} disponíveis)`, 'error'); return; }
+  if (est) est.quantidade -= qtd;
+  const id = db.nextIds.prod++;
+  const data = new Date().toLocaleDateString('pt-BR');
+  db.producao.push({ id, idItem, quantidade: qtd, prioridade: prio, status: 'PENDENTE', data });
+  addActivity(`Pedido de produção #${id} criado`, '#f97316');
+  save(); toast(`Pedido #${id} criado!`); closeModal('modal-producao'); renderProducao(); renderEstoque();
+}
+
+function concluirProducao(id) {
+  const p = db.producao.find(x => x.id === id);
+  if (p) { p.status = 'CONCLUÍDO'; addActivity(`Pedido produção #${id} concluído`, '#22c55e'); save(); toast('Pedido concluído!'); renderProducao(); updateBadges(); }
+}
+function deleteProd(id) {
+  if (!confirm('Excluir este pedido?')) return;
+  db.producao = db.producao.filter(p => p.id !== id);
+  save(); toast('Pedido removido.', 'info'); renderProducao();
+}
+
+/* ──────────────── FINANCEIRO ──────────────── */
+function renderFinanceiro() {
+  const total  = db.financeiro.contasPagar.reduce((s, c) => s + c.valor, 0);
+  const pagas  = db.financeiro.contasPagar.filter(c => c.pago).reduce((s, c) => s + c.valor, 0);
+  const pend   = total - pagas;
+  document.getElementById('fin-summary').innerHTML = `
+    <div class="fin-card">
+      <div class="fin-label">💳 Total a Pagar</div>
+      <div class="amount" style="color:var(--red)">${fmt(total)}</div>
+      <div class="fin-label">${db.financeiro.contasPagar.length} contas</div>
+    </div>
+    <div class="fin-card">
+      <div class="fin-label">✅ Pagas</div>
+      <div class="amount" style="color:var(--green)">${fmt(pagas)}</div>
+      <div class="fin-label">${db.financeiro.contasPagar.filter(c=>c.pago).length} quitadas</div>
+    </div>
+    <div class="fin-card">
+      <div class="fin-label">🏦 Saldo Disponível</div>
+      <div class="amount" style="color:var(--accent2)">${fmt(db.financeiro.saldo)}</div>
+      <div class="fin-label">para novas compras</div>
+    </div>`;
+
+  const tb = document.getElementById('tb-financeiro');
+  const empty = document.getElementById('empty-fin');
+  if (!db.financeiro.contasPagar.length) { tb.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  tb.innerHTML = db.financeiro.contasPagar.map(c => {
+    const f = db.fornecedores.find(x => x.id === c.idFornecedor);
+    const e = db.estoque.find(x => x.id === c.idItem);
+    return `
+    <tr>
+      <td><span class="badge badge-gray">#${c.ordemId}</span></td>
+      <td>${f?.nome || '—'}</td>
+      <td>${e?.nome || 'Item #'+c.idItem}</td>
+      <td style="font-weight:700;color:${c.pago?'var(--text2)':'var(--red)'}">${fmt(c.valor)}</td>
+      <td style="color:var(--text2);font-size:12px">${c.vencimento}</td>
+      <td><span class="badge ${c.pago?'badge-green':'badge-yellow'}">${c.pago?'✅ Paga':'⏳ Pendente'}</span></td>
+      <td>
+        ${!c.pago ? `<button class="btn btn-ghost btn-sm" onclick="pagarConta(${c.ordemId})">💳 Pagar</button>` : '—'}
+      </td>
+    </tr>`}).join('');
+}
+
+function pagarConta(ordemId) {
+  const c = db.financeiro.contasPagar.find(x => x.ordemId === ordemId);
+  if (!c || c.pago) return;
+  c.pago = true;
+  addActivity(`Conta da Ordem #${ordemId} paga — ${fmt(c.valor)}`, '#22c55e');
+  save(); toast(`Conta #${ordemId} marcada como paga!`); renderFinanceiro();
+}
+
+/* ──────────────── EXPORT ──────────────── */
+function exportData() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `erp_compras_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  toast('Dados exportados!', 'info');
+}
+
+/* ──────────────── INIT ──────────────── */
+updateBadges();
+renderDashboard();
+</script>
+</body>
+</html>

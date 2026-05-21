@@ -1,4 +1,4 @@
-D #include<iostream>
+#include <iostream>
 #include "ModuloCompras.h"
 #include <iomanip>
 #include <limits>
